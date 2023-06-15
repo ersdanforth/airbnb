@@ -1,7 +1,7 @@
 
 
 ### 1. Read in libraries and data
-```{r}
+
 rm(list = ls())
 options(scipen = 99)
 setwd("/Users/emmydanforth/Documents/NYCDSA_git/airbnb")
@@ -12,12 +12,11 @@ listings <- read.csv("./data/listings.csv")
 calendar <- read.csv("./data/calendar.csv")
 rent <- read.csv("./data/streeteasy/median_rent.csv")
 inventory <- read.csv("./data/streeteasy/rental_inventory.csv")
-```
 
 
 ### 2. Exploratory data analysis
 
-```{r}
+
 str(listings)
 names(listings)
 
@@ -32,11 +31,11 @@ df <- listings %>%
          number_of_reviews_l30d, first_review, last_review, review_scores_rating, review_scores_accuracy,
          review_scores_cleanliness, review_scores_location, review_scores_value,
          reviews_per_month, calculated_host_listings_count)
-```
+
 
 
 # exploring and cleaning variables
-```{r}
+
 
 df$host_response_rate = as.numeric(sub("%","",df$host_response_rate))/100
 summary(df$host_response_rate) # 1st Q = .99
@@ -46,21 +45,16 @@ summary(df$host_acceptance_rate) # 1st Q = .78
 
 df$host_since = as_date(df$host_since)
 summary(df$host_since) # longest since since 2008
-```
 
-```{r}
+
+
 table(df$neighbourhood_group_cleansed)
 # Bk = 16237, Mh = 17658
 # compare market in Brooklyn vs. Manhattan?
 
-#### circle chart comparing 5 boroughs: NYC
-#### circle chart comparing neighborhoods in each borough
-
-#### bar charts comparing distribution of property type
-```
 
 
-```{r}
+
 table(df$neighbourhood_cleansed) %>% 
   as.data.frame %>% 
   arrange(desc(Freq))
@@ -114,10 +108,10 @@ df %>%
   select(price, number_of_reviews, reviews_per_month) %>% 
   arrange(desc(reviews_per_month)) %>% 
   top_n(10, reviews_per_month)
-```
+
 
 ### 3. Exploratory Visualizations
-```{r}
+
 # most expensive neihgborhoods
 df %>% 
   group_by(neighbourhood_cleansed) %>% 
@@ -129,25 +123,8 @@ df %>%
   geom_bar(stat = 'identity') +
   labs(title = 'Top 10 Most Expensive NYC Neighborhoods',
        x = 'Neighborhood',
-       y = 'Average Listing Price in $')
-```
 
-```{r}
-# price in most popular neighborhoods
-df %>% 
-  group_by(neighbourhood_cleansed) %>% 
-  summarise(count = n(),
-            avg_price = mean(price)) %>% 
-  top_n(5, count) %>% 
-  arrange(desc(avg_price)) %>% 
-  ggplot(aes(x = neighbourhood_cleansed, y = avg_price)) +
-  geom_bar(stat = 'identity') +
-  labs(title = 'Price in Top 5 Neighborhoods with Most Listings',
-       x = 'Neighborhood',
-       y = 'Average Listing Price in $')
-```
 
-```{r}
 
 # price in most popular neighborhoods
 df %>% 
@@ -161,12 +138,25 @@ df %>%
   labs(title = 'Price in Top 5 Neighborhoods with Most Listings',
        x = 'Neighborhood',
        y = 'Average Listing Price in $')
-```
+
+
+# price in most popular neighborhoods
+df %>% 
+  group_by(neighbourhood_cleansed) %>% 
+  summarise(count = n(),
+            avg_price = mean(price)) %>% 
+  top_n(5, count) %>% 
+  arrange(desc(avg_price)) %>% 
+  ggplot(aes(x = neighbourhood_cleansed, y = avg_price)) +
+  geom_bar(stat = 'identity') +
+  labs(title = 'Price in Top 5 Neighborhoods with Most Listings',
+       x = 'Neighborhood',
+       y = 'Average Listing Price in $')
 
 
 
 ### 4. Merging data with streeteasy by neighborhood
-```{r}
+
 rent_3_23 <- rent %>% 
   select(areaName, Borough, areaType, X2023.03)
 rent_3_23
@@ -262,7 +252,6 @@ streeteasy_unmatched <- join_test_2 %>%
   filter(is.na(join_test_2$neighbourhood_cleansed))
 dim(streeteasy_unmatched) # 40 unmatched
 streeteasy_unmatched$neighborhood
-```
 
 
 
@@ -270,7 +259,7 @@ streeteasy_unmatched$neighborhood
 
 
 ### 5. Rentals and airbnb visualizations
-```{r}
+
 # median rent vs. avg airbnb price
 # appears to be positive correlation
 join_test_2 %>% 
@@ -325,6 +314,6 @@ join_test_2 %>%
   coord_cartesian(xlim = c(0, 1500), ylim = c(0, 100))
 
 summary(join_test_2$avg_reviews) # Q1-Q3: 19-34
-```
+
 
   

@@ -19,17 +19,21 @@ dashboardPage(
     
     selectizeInput(inputId = "neighborhood",
                    label = "Neighborhood",
-                   choices = sort(unique(listings$neighbourhood_cleansed))) 
+                   choices = sort(unique(listings$neighbourhood_cleansed)))
+  
   ),
   
   dashboardBody(
     
     tabItems(
       tabItem(tabName = 'overview',
-              fluidRow(                         # use fluid row to put elements side by side
-                column(5, plotOutput("count")), # define output ID 
-                column(7, plotOutput("price")),
-                column(6, plotOutput('neighb_avg'))
+              fluidRow(
+                column(6, plotOutput('donut_borough')),
+                column(6, plotOutput('price_borough')),
+                column(6, plotOutput('donut_neighb')),
+                column(6, plotOutput('price_neighb')),
+                column(6, plotOutput('donut_bedroom')),
+                column(6, plotOutput('price_bedroom'))
               )),
       
       tabItem(tabName = 'supply',

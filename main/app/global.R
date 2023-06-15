@@ -2,6 +2,7 @@
 library(shiny)
 library(tidyverse)
 library(shinydashboard)
+library(RColorBrewer)
 
 setwd("/Users/emmydanforth/Documents/NYCDSA_git/airbnb")
 
