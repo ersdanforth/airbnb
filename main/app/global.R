@@ -1,15 +1,16 @@
 
-library(shiny)
+#library(shiny)
 library(tidyverse)
 library(shinydashboard)
 library(RColorBrewer)
+library(plotly)
 
-setwd("/Users/emmydanforth/Documents/NYCDSA_git/airbnb")
+#setwd("/Users/emmydanforth/Documents/NYCDSA_git/airbnb")
 
 # import data
-listings <- read.csv("./data/listings.csv")
-rent <- read.csv("./data/streeteasy/median_rent.csv")
-inventory <- read.csv("./data/streeteasy/rental_inventory.csv")
+listings <- read.csv("data/listings.csv")
+rent <- read.csv("data/streeteasy/median_rent.csv")
+inventory <- read.csv("data/streeteasy/rental_inventory.csv")
 
 # convert price to numeric
 listings$price<- as.numeric(gsub('[^[:alnum:] ]', '', listings$price))/100
