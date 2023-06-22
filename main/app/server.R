@@ -2,12 +2,12 @@
 function(input, output, session) {
   
   listings_b <- reactive({ 
-    listings %>%
+    df_sub %>% # replaced listings by df_sub
       filter(neighbourhood_group_cleansed == input$borough)
   }) 
   
   listings_n <- reactive({ 
-    listings %>%
+    df_sub %>%
       filter(neighbourhood_cleansed == input$neighborhood)
   }) 
   
@@ -19,18 +19,21 @@ function(input, output, session) {
   
   output$price_borough <- renderPlot(
     
-    listings %>%
-      group_by(neighbourhood_group_cleansed) %>% 
-      summarise(avg_price = mean(price)) %>%
-      mutate(neighbourhood_group_cleansed = fct_reorder(neighbourhood_group_cleansed, -avg_price)) %>% 
-      ggplot(aes(fill = neighbourhood_group_cleansed, x = reorder(neighbourhood_group_cleansed, -avg_price), y = avg_price)) +
-      geom_bar(position = 'dodge', stat = 'identity') + 
-      scale_fill_grey(start = .25, end = .75) +
+    df_sub %>%  # replaced listings by df_sub
+      group_by(neighbourhood_group_cleansed) %>%
+      summarise(count = n()) %>%
+      top_n(10, count) %>% 
+      inner_join(df_sub, by = 'neighbourhood_group_cleansed') %>% 
+      mutate(neighbourhood_group_cleansed = fct_reorder(neighbourhood_group_cleansed, count)) %>% 
+      ggplot(aes(fill = neighbourhood_group_cleansed, x = reorder(neighbourhood_group_cleansed, -count), y = price)) +
+      geom_boxplot() + 
+      coord_cartesian(ylim = c(0, 500)) +
+      scale_fill_brewer("Boroughs", palette='Set2', direction = -1) +
       theme(legend.position = "none", plot.title=element_text(hjust=0.5),
             axis.text.x = element_text(angle = 20)) +
-      labs(title = 'NYC:\nAverage Listing Price by Borough',
+      labs(title = 'NYC:\nListing Price by Borough',
            y = 'Listing Price ($)',
-           x = 'Borough')
+           x = 'Borough') 
   )
   
   
@@ -38,17 +41,18 @@ function(input, output, session) {
     
     listings_b() %>%
       group_by(neighbourhood_cleansed) %>% 
-      summarise(count = n(),
-                avg_price = mean(price)) %>%
-      arrange(desc(avg_price)) %>% 
-      top_n(10, count) %>%
-      mutate(neighbourhood_cleansed = fct_reorder(neighbourhood_cleansed, avg_price)) %>% 
-      ggplot(aes(fill = neighbourhood_cleansed, x = reorder(neighbourhood_cleansed, -avg_price), y = avg_price)) +
-      geom_bar(position = 'dodge', stat = 'identity') + 
-      scale_fill_grey(start = 0.75, end = 0.25) +
+      summarise(count = n()) %>%
+      arrange(desc(count)) %>% 
+      slice(1:10) %>% 
+      inner_join(df_sub, by = 'neighbourhood_cleansed') %>% 
+      mutate(neighbourhood_cleansed = fct_reorder(neighbourhood_cleansed, count)) %>% 
+      ggplot(aes(fill = neighbourhood_cleansed, x = reorder(neighbourhood_cleansed, -count), y = price)) +
+      geom_boxplot() + 
+      coord_cartesian(ylim = c(0, 500)) +
+      scale_fill_manual(values = colorRampPalette(rev(brewer.pal(8, "Set2")))(10)) +
       theme(legend.position = "none", plot.title=element_text(hjust=0.5),
             axis.text.x = element_text(angle = 20)) +
-      labs(title = 'Borough Selection:\nAverage Listing Price by Neighborhood',
+      labs(title = 'Borough Selection:\nListing Price by Neighborhood',
            y = 'Listing Price ($)',
            x = 'Neighborhood')
 
@@ -58,16 +62,16 @@ function(input, output, session) {
 
     listings_n() %>%
       filter(!is.na(bedrooms),
-             bedrooms < 5) %>%
+             bedrooms < 4) %>%
       group_by(bedrooms) %>%
-      summarise(avg_price = mean(price)) %>%
-      ggplot(aes(fill = factor(bedrooms), x = -bedrooms, y = avg_price)) +
-      geom_bar(stat = 'identity') +
-      scale_fill_grey(start = 0.75, end = 0.25) +
+      ggplot(aes(fill = factor(bedrooms), x = bedrooms, y = price)) +
+      geom_boxplot() +
+      coord_cartesian(ylim = c(0, 500)) +
+      scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set2"))(10)) +
       labs(title = 'Average Listing Price by Size') +
       theme(legend.position = "none", plot.title=element_text(hjust=0.5),
             axis.text.x = element_text(angle = 20)) +
-      labs(title = 'Neighborhood Selection:\nAverage Listing Price by Bedrooms',
+      labs(title = 'Neighborhood Selection:\nListing Price by Bedrooms',
            y = 'Listing Price ($)',
            x = 'Bedrooms')
   )
@@ -75,7 +79,7 @@ function(input, output, session) {
   
   output$donut_borough <- renderPlot(
     
-    listings %>% 
+    df_sub %>% # replaced listings by df_sub
       group_by(neighbourhood_group_cleansed) %>% 
       summarise(count = n()) %>% 
       arrange(desc(count)) %>% 
@@ -101,7 +105,7 @@ function(input, output, session) {
       summarise(count = n()) %>% 
       mutate(perc = prop.table(count) * 100) %>% 
       arrange(desc(perc)) %>% 
-      top_n(10, perc) %>% 
+      slice(1:10) %>% 
       mutate(neighbourhood_cleansed = fct_reorder(neighbourhood_cleansed, -count),
              ymax = cumsum(perc),
              ymin = ifelse(ymax == perc, 0, lag(ymax))) %>% 
@@ -122,7 +126,7 @@ function(input, output, session) {
       filter(!is.na(bedrooms)) %>% 
       group_by(bedrooms) %>% 
       summarise(count = n()) %>% 
-      slice(seq_len(4)) %>% 
+      slice(seq_len(3)) %>% 
       mutate(perc = prop.table(count) * 100) %>% 
       arrange(desc(perc)) %>% 
       mutate(bedrooms = factor(bedrooms),
@@ -145,11 +149,11 @@ function(input, output, session) {
       ggplot(aes(x = price, y=reviews_per_month, col = neighbourhood_group_cleansed)) +
       geom_smooth(method = "loess", se = FALSE) +
       scale_color_brewer("Boroughs", palette='Set2') +
-      coord_cartesian(xlim = c(0, 750), y = c(0, 2.5)) +
+      coord_cartesian(xlim = c(0, 500), y = c(0, 2.5)) +
       labs(title = 'Demand by Listing Price Across Five Boroughs',
            y = 'Monthly Reviews',
            x = 'Price in $')
-    
+  
   )
   
   output$price_reviews_neighb <- renderPlot(
@@ -158,12 +162,12 @@ function(input, output, session) {
       group_by(neighbourhood_cleansed) %>% 
       summarise(count = n()) %>% 
       top_n(5, count) %>% 
-      right_join(listings, by = 'neighbourhood_cleansed') %>% 
+      right_join(df_sub, by = 'neighbourhood_cleansed') %>% 
       filter(!is.na(count)) %>% 
       ggplot(aes(x = price, y=reviews_per_month, col = neighbourhood_cleansed)) +
       geom_smooth(method = "loess", se = FALSE) +
       scale_color_brewer("Neighborhoods", palette='Set2') +
-      coord_cartesian(xlim = c(0, 750), y = c(0, 2.5)) +
+      coord_cartesian(xlim = c(0, 500), y = c(0, 2.5)) +
       labs(title = 'Borough Selection: Demand by Listing Price Across Top 5 Neighborhoods',
            y = 'Monthly Reviews',
            x = 'Price in $')
@@ -239,6 +243,16 @@ function(input, output, session) {
       labs(title = 'Rental Inventory and Airbnb Listing Reviews',
            x = 'Rental Inventory',
            y = 'Average Listing Monthly Reviews')
+  )
+  
+  output$revenue <- renderPlot(
+    
+    df_join %>% 
+      mutate(avg_revenue = avg_revenue*(input$occupancy)/100) %>% 
+      ggplot(aes(x = median_rent, y = avg_revenue)) +
+      geom_point() +
+      geom_abline(slope = 1) +
+      coord_cartesian(xlim = c(1000, 7000), ylim = c(1000, 7000))
   )
   
 }

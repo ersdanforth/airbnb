@@ -12,8 +12,10 @@ dashboardPage(
       menuItem("Start Here", tabName = "intro", icon = icon("house")),
       menuItem("Market Overview", tabName = "overview", icon = icon("map")),
       menuItem("Supply and Demand", tabName = "supply", icon = icon("chart-line")),
-      menuItem("Airbnb and the Rental Market", tabName = "rentals", icon = icon("building"))
+      menuItem("Airbnb and the Rental Market", tabName = "rentals", icon = icon("building")),
+      menuItem("Projecting Profit", tabName = "profit", icon = icon("dollar-sign"))
     ),
+    
     
     selectizeInput(inputId = "borough", # must define an ID for each widget
                    label = "Borough", # title seen by user
@@ -58,8 +60,21 @@ dashboardPage(
       
       tabItem(tabName = 'supply',
               fluidRow(
-                column(10, plotOutput('price_reviews_borough')),
-                column(10, plotOutput('price_reviews_neighb'))
+                box(width = 3, height = 375, title = "Plotting Demand", "Here, we use a listing's monthly reviews as a 
+                    proxy for its popularity or demand. While this is an imprecise metric, it is 
+                    the best approximation of a listing's use that is available in the dataset. User ratings, while
+                    available, have little variation across the dataset and aren't helpful for depicting
+                    listing popularity.", br(), br(),
+                    "This line plot shows the relationship between price and monthly reviews across each of the 
+                    five boroughs. With the excpetion of Manhattan, each of the boroughs shows declining demand for
+                    listings above $200."),
+                box(width = 9, height = 375, plotOutput('price_reviews_borough', height = 360))
+              ),
+              fluidRow(
+                box(width = 9, height = 375, plotOutput('price_reviews_neighb', height = 360)),
+                box(width = 3, height = 375, title = "Demand by Neighborhood", "Use the sidebar Borough filter to choose a borough. This
+                    plot displays reviews against price for the five neighborhoods with the most listings in
+                    that borough.")
               )),
       
       tabItem(tabName = 'rentals',
@@ -80,9 +95,14 @@ dashboardPage(
                   tabPanel("Airbnb Price", plotOutput('test5')),
                   tabPanel("Airbnb Monthly Reviews", plotOutput('test6')),
                 )
-              ))
+              )),
       
-      #tabItem(tabName = 'data', DTOutput('table')) # formatted table
+      tabItem(tabName = 'profit',
+              fluidRow(
+                box(sliderInput("occupancy", h3("Occupancy Rate"), min = 0, max = 100, value = 50)),
+                box(plotOutput('revenue'))
+              ))
+    
     )
   )
 )

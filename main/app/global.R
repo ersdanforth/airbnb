@@ -53,6 +53,8 @@ top_20 <- unlist(top_20)
 df_join <- full_join(airbnb_neighb, rentals, 
                          by = c('neighbourhood_cleansed' = 'neighborhood'), keep = TRUE)
 
+df_join$avg_revenue <- df_join$avg_price * 30
+
 df_join_20 <- df_join %>% 
   filter(neighbourhood_cleansed %in% top_20)
 
