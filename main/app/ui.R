@@ -6,14 +6,14 @@ dashboardPage(
   dashboardSidebar(
     
     sidebarUserPanel("Emmeline Danforth",
-                     image = "./nycdsa.jpg"),
+                     image = "./ED.jpeg"),
     
     sidebarMenu(
       menuItem("Start Here", tabName = "intro", icon = icon("house")),
       menuItem("Market Overview", tabName = "overview", icon = icon("map")),
       menuItem("Supply and Demand", tabName = "supply", icon = icon("chart-line")),
       menuItem("Airbnb and the Rental Market", tabName = "rentals", icon = icon("building")),
-      menuItem("Projecting Profit", tabName = "profit", icon = icon("dollar-sign"))
+      menuItem("Projecting Revenue", tabName = "revenue", icon = icon("dollar-sign"))
     ),
     
     
@@ -97,11 +97,29 @@ dashboardPage(
                 )
               )),
       
-      tabItem(tabName = 'profit',
+      tabItem(tabName = 'revenue',
+              
+              fluidRow(box(title = "Projecting Revenue", width = 12, solidHeader = TRUE, status = "primary",
+                "The visual below compares revenue for short-term rentals (based on a nightly Airbnb rate) vs. long-term rentals (based on
+                a year-long lease in the rental market). Using the Occupancy Rate slider, choose a projected occupancy rate for an 
+                Airbnb listing to see projected monthly revenue on the graph. Points above the line represent neighborhoods that 
+                bring in more revenue for Airbnbs than for long-term rentals, while points below the line are neighborhoods that bring 
+                in more revenue for long-term rentals than for Airbnbs. Hover over a point to see the data.")),
+              
               fluidRow(
-                box(sliderInput("occupancy", h3("Occupancy Rate"), min = 0, max = 100, value = 50)),
-                box(plotOutput('revenue'))
-              ))
+                column(4, 
+                       box(h3("Airbnb Occupancy Rate"), p("Choose a monthly occupancy rate. On the slide,
+                                                          50 indicates 50% occupancy, ~15 nights/month."),
+                           width = NULL, height = 265,
+                           sliderInput("occupancy", label = NULL, min = 0, max = 100, value = 50)),
+                       box(h3("Projected Revenue"), p("Hover to choose a neighborhood."), width = NULL, height = 265,
+                              verbatimTextOutput("hover_info"))),
+                column(8, 
+                       box(width = NULL, height = 550, 
+                           plotOutput('revenue', height = 525, 
+                                      hover = hoverOpts(id = "plot_hover", delayType = "throttle"))))
+              )
+            )
     
     )
   )

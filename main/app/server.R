@@ -255,5 +255,18 @@ function(input, output, session) {
       coord_cartesian(xlim = c(1000, 7000), ylim = c(1000, 7000))
   )
   
+  output$hover_info <- renderPrint({
+    x <- nearPoints(df_join %>% 
+                 mutate(avg_revenue = round(avg_revenue*(input$occupancy)/100, 2)) %>% 
+                 dplyr::select(neighborhood, avg_revenue, median_rent),
+               input$plot_hover, threshold = 5, maxpoints = 1)[1,1:3]
+    neighb <- x[,1]
+    airbnb <- x[,2]
+    rental <- x[,3]
+    #bor <- x[,4]
+    cat("Neighborhood: ", neighb, "\nPredicted Airbnb Revenue: ", airbnb, "\nMedian Rental Revenue: ", rental, sep = "")
+  })
+    
+  
 }
 
