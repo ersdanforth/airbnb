@@ -14,16 +14,7 @@ dashboardPage(
       menuItem("Supply and Demand", tabName = "supply", icon = icon("chart-line")),
       menuItem("Airbnb and the Rental Market", tabName = "rentals", icon = icon("building")),
       menuItem("Projecting Revenue", tabName = "revenue", icon = icon("dollar-sign"))
-    ),
-    
-    
-    selectizeInput(inputId = "borough", # must define an ID for each widget
-                   label = "Borough", # title seen by user
-                   choices = sort(unique(listings$neighbourhood_group_cleansed))), # options in dropdown
-    
-    selectizeInput(inputId = "neighborhood",
-                   label = "Neighborhood",
-                   choices = sort(unique(listings$neighbourhood_cleansed)))
+    )
   
   ),
   
@@ -33,29 +24,39 @@ dashboardPage(
       tabItem(tabName = 'intro',
               h1("NYC Airbnb Listings: March 2023"),
               br(),
+              h4('Project Introduction'),
+              p('This project aims to explore the connection between Airbnb and the long-term rental market in NYC. Although NYC law
+                prohibits short-term rentals through Airbnb (defined by a stay shorter than 30 days), this is not enforced. What is the
+                relationship between Airbnb price and availability and rental price and availability? Based on current trends,
+                how can a landlord maximize revenue?'),
+              br(),
               h4("Data Sources"),
-              p('This analysis is based on two primary data sources. Inside Airbnb is a project providing data on Airbnb listings to enable 
-                publicly available analysis and foster transparency around Airbnb\'s impact on residential communities. Street Easy, a
-                popular site to search for NYC rentals, provides monthly aggregate data on neighborhood rental market statistics.'),
+              p('This analysis is based on two data sources. Inside Airbnb provides data on current Airbnb listings to 
+              enable publicly available analysis and foster transparency around Airbnb\'s impact on residential communities. Street Easy, a
+                popular site to search for NYC rentals, provides monthly aggregate data on neighborhood rental market statistics. The data
+                used here are March 2023 outputs from both sites.'),
               br(),
               h4("Tabs"),
               p('The tabs on this dashboard each provide different visualizations to portray the Airbnb market across NYC neighborhoods 
-                and the interaction between Airbnb listings and the rental market.'),
-              br(),
-              h4("Filters"),
-              p('While some visuals display citywide data, others are filtered based on the dropdown menus on the left. Use
-                the Borough menu to narrow in on data for one borough, then the Neighborhood menu to choose a specific neighborhood
-                within that borough.')
+                and the interaction between Airbnb listings and the rental market. Click into each tab for more detail.')
               ),
   
       tabItem(tabName = 'overview',
+              
+              fluidRow(box(title = "Exploring the Airbnb Market in NYC", width = 12, solidHeader = TRUE, status = "primary",
+                           "Use the filters to view listing quantity and price across boroughs, neighborhoods,
+                           and by number of bedrooms."
+              )),
+              fluidRow(box(selectizeInput(inputId = "borough", label = "Borough",
+                                          choices = c("All", sort(unique(listings$neighbourhood_group_cleansed))))),
+                       box(selectizeInput(inputId = "neighborhood", label = "Neighborhood",
+                                          choices = c("All", sort(unique(listings$neighbourhood_cleansed)))))),
               fluidRow(
-                column(4, plotOutput('donut_borough')),
-                column(4, plotOutput('donut_neighb')),
-                column(4, plotOutput('donut_bedroom')),
-                column(4, plotOutput('price_borough')),
-                column(4, plotOutput('price_neighb')),
-                column(4, plotOutput('price_bedroom'))
+                tabBox(width = 12, height = "475px",
+                       tabPanel('By Borough', column(6, plotOutput('donut_borough')), column(6,plotOutput('price_borough'))),
+                       tabPanel('By Neighborhood', column(6, plotOutput('donut_neighb')), column(6,plotOutput('price_neighb'))),
+                       tabPanel('By Size', column(6, plotOutput('donut_bedroom')), column(6,plotOutput('price_bedroom')))
+              )
               )),
       
       tabItem(tabName = 'supply',
@@ -66,19 +67,27 @@ dashboardPage(
                     available, have little variation across the dataset and aren't helpful for depicting
                     listing popularity.", br(), br(),
                     "This line plot shows the relationship between price and monthly reviews across each of the 
-                    five boroughs. With the excpetion of Manhattan, each of the boroughs shows declining demand for
+                    five boroughs. With the exception of Manhattan, each of the boroughs shows declining demand for
                     listings above $200."),
                 box(width = 9, height = 375, plotOutput('price_reviews_borough', height = 360))
               ),
               fluidRow(
                 box(width = 9, height = 375, plotOutput('price_reviews_neighb', height = 360)),
-                box(width = 3, height = 375, title = "Demand by Neighborhood", "Use the sidebar Borough filter to choose a borough. This
-                    plot displays reviews against price for the five neighborhoods with the most listings in
-                    that borough.")
+                box(width = 3, height = 375, title = "Demand by Neighborhood",  
+                    selectizeInput(inputId = "borough_price", label = "Borough",
+                                   choices = c("All", sort(unique(listings$neighbourhood_group_cleansed)))), 
+                    "This plot displays monthly reviews against price for the five neighborhoods with the most 
+                    listings in the selected borough.")
               )),
       
       tabItem(tabName = 'rentals',
-              h4("Neighborhood-Level Airbnb Supply and Demand against Rental Market Pricing and Availability"),
+              fluidRow(box(title = "Neighborhood-Level Airbnb Supply and Demand against Rental Market Pricing and Availability", 
+                           width = 12, solidHeader = TRUE, status = "primary",
+                           "These visuals illusrate the relationship between the Airbnb market and the long-term rental market in
+                           each NYC neighborhood. On each tab, the y axis represents average Airbnb listing supply, price, or number of reviews 
+                           for an individual neighborhood. The x axis represents either median rent or total rental inventory for that 
+                           neighborhood based on StreetEasy March 2023 data."
+              )),
               fluidRow(
                 tabBox(
                   title = "Median Rents",

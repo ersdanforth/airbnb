@@ -1,25 +1,31 @@
 
 function(input, output, session) {
   
-  listings_b <- reactive({ 
-    df_sub %>% # replaced listings by df_sub
-      filter(neighbourhood_group_cleansed == input$borough)
+  listings_b <- reactive({
+    if(input$borough == "All") return(df_sub)
+    else return (df_sub %>% filter(neighbourhood_group_cleansed == input$borough))
   }) 
   
-  listings_n <- reactive({ 
-    df_sub %>%
-      filter(neighbourhood_cleansed == input$neighborhood)
+  listings_price <- reactive({
+    if(input$borough_price == "All") return(df_sub)
+    else return (df_sub %>% filter(neighbourhood_group_cleansed == input$borough_price))
   }) 
+
+  listings_size <- reactive({
+    if(input$neighborhood == 'All' & input$borough == 'All') return(df_sub)
+    if (input$neighborhood == 'All') return(df_sub %>% filter(neighbourhood_group_cleansed == input$borough))
+    else return(df_sub %>% filter(neighbourhood_cleansed == input$neighborhood))
+  })
   
   observe({ 
     updateSelectizeInput(session, 
                          'neighborhood', 
-                         choices = sort(unique(listings_b()$neighbourhood_cleansed))) 
+                         choices = c("All", sort(unique(listings_b()$neighbourhood_cleansed))))
   }) 
   
   output$price_borough <- renderPlot(
     
-    df_sub %>%  # replaced listings by df_sub
+    df_sub %>%
       group_by(neighbourhood_group_cleansed) %>%
       summarise(count = n()) %>%
       top_n(10, count) %>% 
@@ -31,7 +37,7 @@ function(input, output, session) {
       scale_fill_brewer("Boroughs", palette='Set2', direction = -1) +
       theme(legend.position = "none", plot.title=element_text(hjust=0.5),
             axis.text.x = element_text(angle = 20)) +
-      labs(title = 'NYC:\nListing Price by Borough',
+      labs(title = 'Listing Price by Borough',
            y = 'Listing Price ($)',
            x = 'Borough') 
   )
@@ -52,7 +58,7 @@ function(input, output, session) {
       scale_fill_manual(values = colorRampPalette(rev(brewer.pal(8, "Set2")))(10)) +
       theme(legend.position = "none", plot.title=element_text(hjust=0.5),
             axis.text.x = element_text(angle = 20)) +
-      labs(title = 'Borough Selection:\nListing Price by Neighborhood',
+      labs(title = 'Listing Price by Neighborhood',
            y = 'Listing Price ($)',
            x = 'Neighborhood')
 
@@ -60,7 +66,7 @@ function(input, output, session) {
   
   output$price_bedroom <- renderPlot(
 
-    listings_n() %>%
+    listings_size() %>%
       filter(!is.na(bedrooms),
              bedrooms < 4) %>%
       group_by(bedrooms) %>%
@@ -71,7 +77,7 @@ function(input, output, session) {
       labs(title = 'Average Listing Price by Size') +
       theme(legend.position = "none", plot.title=element_text(hjust=0.5),
             axis.text.x = element_text(angle = 20)) +
-      labs(title = 'Neighborhood Selection:\nListing Price by Bedrooms',
+      labs(title = 'Listing Price by Size',
            y = 'Listing Price ($)',
            x = 'Bedrooms')
   )
@@ -79,7 +85,7 @@ function(input, output, session) {
   
   output$donut_borough <- renderPlot(
     
-    df_sub %>% # replaced listings by df_sub
+    df_sub %>%
       group_by(neighbourhood_group_cleansed) %>% 
       summarise(count = n()) %>% 
       arrange(desc(count)) %>% 
@@ -93,8 +99,8 @@ function(input, output, session) {
       xlim(c(2, 4)) +
       scale_fill_brewer("Boroughs", palette='Set2') +
       theme_void() + 
-      labs(title = 'NYC: Listings by Borough') +
-      theme(plot.title=element_text(hjust=0.8), plot.margin = margin(0,.4,0,-.3, 'cm'))
+      labs(title = 'Listings by Borough') +
+      theme(plot.title=element_text(hjust=0.5), plot.margin = margin(0,.4,0,-.3, 'cm'))
 
   )
   
@@ -115,14 +121,14 @@ function(input, output, session) {
       xlim(c(2, 4)) +
       scale_fill_manual("Neighborhoods", values = colorRampPalette(brewer.pal(8, "Set2"))(10)) +
       theme_void() + 
-      labs(title = 'Borough Selection: Listings by Neighborhood (Top 10)') +
-      theme(plot.title=element_text(hjust=-.75), plot.margin = margin(0,.4,0,-.3, 'cm'))
+      labs(title = 'Listings by Neighborhood (Top 10)') +
+      theme(plot.title=element_text(hjust=0.5), plot.margin = margin(0,.4,0,-.3, 'cm'))
 
   )
   
   output$donut_bedroom <- renderPlot(
     
-    listings_n() %>%
+    listings_size() %>%
       filter(!is.na(bedrooms)) %>% 
       group_by(bedrooms) %>% 
       summarise(count = n()) %>% 
@@ -138,8 +144,8 @@ function(input, output, session) {
       xlim(c(2, 4)) +
       scale_fill_manual("Bedrooms", values = colorRampPalette(brewer.pal(8, "Set2"))(10)) +
       theme_void() + 
-      labs(title = 'Neighborhood Selection: Listings by Size') +
-      theme(plot.title=element_text(hjust=0.9), plot.margin = margin(0,.4,0,-.3, 'cm'))
+      labs(title = 'Listings by Size') +
+      theme(plot.title=element_text(hjust=0.5), plot.margin = margin(0,.4,0,-.3, 'cm'))
     
   )
 
@@ -158,7 +164,7 @@ function(input, output, session) {
   
   output$price_reviews_neighb <- renderPlot(
     
-    listings_b() %>% 
+    listings_price() %>% 
       group_by(neighbourhood_cleansed) %>% 
       summarise(count = n()) %>% 
       top_n(5, count) %>% 
@@ -168,7 +174,7 @@ function(input, output, session) {
       geom_smooth(method = "loess", se = FALSE) +
       scale_color_brewer("Neighborhoods", palette='Set2') +
       coord_cartesian(xlim = c(0, 500), y = c(0, 2.5)) +
-      labs(title = 'Borough Selection: Demand by Listing Price Across Top 5 Neighborhoods',
+      labs(title = 'Demand by Listing Price Across Top 5 Neighborhoods',
            y = 'Monthly Reviews',
            x = 'Price in $')
   )
@@ -252,7 +258,10 @@ function(input, output, session) {
       ggplot(aes(x = median_rent, y = avg_revenue)) +
       geom_point() +
       geom_abline(slope = 1) +
-      coord_cartesian(xlim = c(1000, 7000), ylim = c(1000, 7000))
+      coord_cartesian(xlim = c(1000, 7000), ylim = c(1000, 7000)) +
+      labs(title = 'Neighborhood-Level Projected Revenue from Airbnb Listing or Long-Term Rental',
+           y = 'Airbnb Monthly Revenue ($)',
+           x = 'Long-Term Rental Monthly Revenue ($)')
   )
   
   output$hover_info <- renderPrint({
@@ -263,7 +272,6 @@ function(input, output, session) {
     neighb <- x[,1]
     airbnb <- x[,2]
     rental <- x[,3]
-    #bor <- x[,4]
     cat("Neighborhood: ", neighb, "\nPredicted Airbnb Revenue: ", airbnb, "\nMedian Rental Revenue: ", rental, sep = "")
   })
     
