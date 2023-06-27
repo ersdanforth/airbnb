@@ -92,17 +92,17 @@ dashboardPage(
                 tabBox(
                   title = "Median Rents",
                   height = "250px",
-                  tabPanel("Airbnb Count", plotOutput('test1')),
-                  tabPanel("Airbnb Price", plotOutput('test2')),
-                  tabPanel("Airbnb Monthly Reviews", plotOutput('test3')),
+                  tabPanel("Airbnb Count", plotOutput('rent_count')),
+                  tabPanel("Airbnb Price", plotOutput('rent_price')),
+                  tabPanel("Airbnb Monthly Reviews", plotOutput('rent_reviews')),
                 ),
                 
                 tabBox(
                   title = "Rental Inventory",
                   height = "250px",
-                  tabPanel("Airbnb Count", plotOutput('test4')),
-                  tabPanel("Airbnb Price", plotOutput('test5')),
-                  tabPanel("Airbnb Monthly Reviews", plotOutput('test6')),
+                  tabPanel("Airbnb Count", plotOutput('inv_count')),
+                  tabPanel("Airbnb Price", plotOutput('inv_price')),
+                  tabPanel("Airbnb Monthly Reviews", plotOutput('inv_reviews')),
                 )
               )),
       
@@ -110,26 +110,35 @@ dashboardPage(
               
               fluidRow(box(title = "Projecting Revenue", width = 12, solidHeader = TRUE, status = "primary",
                 "The visual below compares revenue for short-term rentals (based on a nightly Airbnb rate) vs. long-term rentals (based on
-                a year-long lease in the rental market). Using the Occupancy Rate slider, choose a projected occupancy rate for an 
-                Airbnb listing to see projected monthly revenue on the graph. Points above the line represent neighborhoods that 
-                bring in more revenue for Airbnbs than for long-term rentals, while points below the line are neighborhoods that bring 
-                in more revenue for long-term rentals than for Airbnbs. Hover over a point to see the data.")),
+                a year-long lease in the rental market). Each point represents a single neighborhood in NYC, with the median rent shown on the x-axis
+                and the potential monthly Airbnb revenue on the y-axis. The Airbnb monthly revenue is calculated using the average nightly rate for 
+                current listings in that neighborhood, multiplied by the chosen occupancy rate. Using the Occupancy Rate slider, choose a projected 
+                occupancy rate for an Airbnb property to see the projected monthly revenue on the graph. 
+                
+                Points above the line represent neighborhoods that bring in more revenue for Airbnbs than for long-term rentals, while points below the 
+                line are neighborhoods that bring in more revenue for long-term rentals than for Airbnbs. Hover over a point to see the data.")),
               
               fluidRow(
                 column(4, 
+                       box(width = NULL, height = 150,
+                           checkboxGroupInput('borough_check', label = h3('Borough Selection'),
+                                          choices = unique(listings$neighbourhood_group_cleansed), 
+                                          selected = unique(listings$neighbourhood_group_cleansed),
+                                          inline = TRUE)),
                        box(h3("Airbnb Occupancy Rate"), p("Choose a monthly occupancy rate. On the slide,
                                                           50 indicates 50% occupancy, ~15 nights/month."),
-                           width = NULL, height = 265,
+                           width = NULL, height = 200,
                            sliderInput("occupancy", label = NULL, min = 0, max = 100, value = 50)),
-                       box(h3("Projected Revenue"), p("Hover to choose a neighborhood."), width = NULL, height = 265,
-                              verbatimTextOutput("hover_info"))),
+                       box(h3("Projected Revenue"), p("Hover to choose a neighborhood."), width = NULL, height = 200,
+                              verbatimTextOutput("hover_info"))
+                       ),
                 column(8, 
-                       box(width = NULL, height = 550, 
+                       box(width = NULL, height = 590, 
                            plotOutput('revenue', height = 525, 
                                       hover = hoverOpts(id = "plot_hover", delayType = "throttle"))))
-              )
-            )
-    
+                      )
+              
+          )
+        )
     )
-  )
 )

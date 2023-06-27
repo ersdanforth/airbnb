@@ -4,8 +4,7 @@ library(tidyverse)
 library(shinydashboard)
 library(RColorBrewer)
 library(plotly)
-
-#setwd("/Users/emmydanforth/Documents/NYCDSA_git/airbnb")
+library(shinyWidgets)
 
 # import data
 listings <- read.csv("data/listings.csv")
@@ -23,7 +22,7 @@ df_sub <- listings %>%
          minimum_nights <= quantile(minimum_nights, .99, na.rm = TRUE),
          calculated_host_listings_count <= quantile(calculated_host_listings_count, .99, na.rm = TRUE))
 
-# join rental market and airbnb data
+# clean rentals data
 rentals <- full_join(rent, inventory, by = c('areaName', 'Borough', 'areaType')) %>% 
   transmute(median_rent = X2023.03.x,
             rental_inventory = X2023.03.y,
@@ -36,7 +35,7 @@ rentals <- full_join(rent, inventory, by = c('areaName', 'Borough', 'areaType'))
                              x = neighborhood, ignore.case = F, fixed = T)) %>% 
   filter(area_type == 'neighborhood')
 
-
+# group airbnb data by neighborhood
 airbnb_neighb <- listings %>% 
   group_by(neighbourhood_cleansed) %>% 
   summarise(count = n(),
@@ -46,17 +45,8 @@ airbnb_neighb <- listings %>%
             avg_host_listings = mean(calculated_host_listings_count, na.rm = TRUE)) %>% 
   as.data.frame()
 
-top_20 <- airbnb_neighb %>% 
-  top_n(20, count) %>% 
-  select(neighbourhood_cleansed)
-top_20 <- unlist(top_20)
-
+# join rentals and airbnb data
 df_join <- full_join(airbnb_neighb, rentals, 
-                         by = c('neighbourhood_cleansed' = 'neighborhood'), keep = TRUE)
-
-df_join$avg_revenue <- df_join$avg_price * 30
-
-df_join_20 <- df_join %>% 
-  filter(neighbourhood_cleansed %in% top_20)
-
+                     by = c('neighbourhood_cleansed' = 'neighborhood'), keep = TRUE)
+df_join %>% mutate(avg_revenue = avg_price * 30)
 

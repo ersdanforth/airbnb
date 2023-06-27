@@ -100,7 +100,7 @@ function(input, output, session) {
       scale_fill_brewer("Boroughs", palette='Set2') +
       theme_void() + 
       labs(title = 'Listings by Borough') +
-      theme(plot.title=element_text(hjust=0.5), plot.margin = margin(0,.4,0,-.3, 'cm'))
+      theme(plot.title=element_text(hjust=0.5))
 
   )
   
@@ -122,7 +122,7 @@ function(input, output, session) {
       scale_fill_manual("Neighborhoods", values = colorRampPalette(brewer.pal(8, "Set2"))(10)) +
       theme_void() + 
       labs(title = 'Listings by Neighborhood (Top 10)') +
-      theme(plot.title=element_text(hjust=0.5), plot.margin = margin(0,.4,0,-.3, 'cm'))
+      theme(plot.title=element_text(hjust=0.5))
 
   )
   
@@ -145,7 +145,7 @@ function(input, output, session) {
       scale_fill_manual("Bedrooms", values = colorRampPalette(brewer.pal(8, "Set2"))(10)) +
       theme_void() + 
       labs(title = 'Listings by Size') +
-      theme(plot.title=element_text(hjust=0.5), plot.margin = margin(0,.4,0,-.3, 'cm'))
+      theme(plot.title=element_text(hjust=0.5))
     
   )
 
@@ -179,7 +179,7 @@ function(input, output, session) {
            x = 'Price in $')
   )
   
-  output$test1 <- renderPlot(
+  output$rent_count <- renderPlot(
     
     df_join %>% 
       ggplot(aes(x = median_rent, y = count)) +
@@ -191,7 +191,7 @@ function(input, output, session) {
            y = 'Airbnb Listing Count')
   )
   
-  output$test2 <- renderPlot(
+  output$rent_price <- renderPlot(
   
     df_join %>% 
       ggplot(aes(x = median_rent, y = avg_price)) +
@@ -203,7 +203,7 @@ function(input, output, session) {
            y = 'Average Airbnb Listing Price')
   )
 
-  output$test3 <- renderPlot(
+  output$rent_reviews <- renderPlot(
     
     df_join %>% 
       ggplot(aes(x = median_rent, y = avg_reviews)) +
@@ -215,7 +215,7 @@ function(input, output, session) {
            y = 'Average Listing Monthly Reviews')
   )
   
-  output$test4 <- renderPlot(
+  output$inv_count <- renderPlot(
     
     df_join %>% 
       ggplot(aes(x = rental_inventory, y = count)) +
@@ -227,7 +227,7 @@ function(input, output, session) {
            y = 'Airbnb Listing Count')
   )
   
-  output$test5 <- renderPlot(
+  output$inv_price <- renderPlot(
     
     df_join %>% 
       ggplot(aes(x = rental_inventory, y = avg_price)) +
@@ -239,7 +239,7 @@ function(input, output, session) {
            y = 'Average Airbnb Listing Price')
   )
   
-  output$test6 <- renderPlot(
+  output$inv_reviews <- renderPlot(
     
     df_join %>% 
       ggplot(aes(x = rental_inventory, y = avg_reviews)) +
@@ -252,12 +252,16 @@ function(input, output, session) {
   )
   
   output$revenue <- renderPlot(
-    
-    df_join %>% 
-      mutate(avg_revenue = avg_revenue*(input$occupancy)/100) %>% 
+
+    df_join %>%
+      filter(borough %in% input$borough_check) %>% 
+      mutate(avg_revenue = avg_revenue*(input$occupancy)/100) %>%
       ggplot(aes(x = median_rent, y = avg_revenue)) +
-      geom_point() +
+      geom_point(aes(col = borough)) +
+      scale_color_brewer('Boroughs', palette='Set2') +
       geom_abline(slope = 1) +
+      theme(legend.position="bottom", legend.title = element_blank(),
+            plot.margin = margin(.5, .5, -.25, .5, "cm")) +
       coord_cartesian(xlim = c(1000, 7000), ylim = c(1000, 7000)) +
       labs(title = 'Neighborhood-Level Projected Revenue from Airbnb Listing or Long-Term Rental',
            y = 'Airbnb Monthly Revenue ($)',

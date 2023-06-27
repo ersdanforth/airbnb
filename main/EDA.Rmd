@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 rm(list = ls())
 options(scipen = 99)
-setwd("/Users/emmydanforth/Documents/NYCDSA_git/airbnb")
+setwd("/Users/emmydanforth/Documents/NYCDSA_git/airbnb/main/app")
 
 library(tidyverse)
 
@@ -21,7 +21,6 @@ listings <- read.csv("./data/listings.csv")
 rent <- read.csv("./data/streeteasy/median_rent.csv")
 inventory <- read.csv("./data/streeteasy/rental_inventory.csv")
 ```
-
 
 ### 2. Exploratory data analysis
 ```{r}
@@ -94,23 +93,19 @@ df %>%
   top_n(10, number_of_reviews)
 # some listings have reviews above 1000, prices are in normal range
 
+# little variation in reviews
 summary(df$review_scores_rating) # 0-5
 summary(df$review_scores_accuracy)
 summary(df$review_scores_cleanliness)
 summary(df$review_scores_location)
 summary(df$review_scores_value)
 
-summary(df$reviews_per_month) # max 86?
-
-names(df)
+summary(df$reviews_per_month) # max 86
 # how do some listings have more than 30 reviews per month?
 df %>% 
   select(id, price, number_of_reviews, reviews_per_month, first_review, last_review, number_of_reviews_ltm) %>% 
   arrange(desc(reviews_per_month)) %>% 
   top_n(10, reviews_per_month)
-
-summary(df$reviews_per_month)
-hist(df$reviews_per_month)
 
 df_sub <- df %>% 
   filter(reviews_per_month <= quantile(reviews_per_month, .99, na.rm = TRUE))
@@ -122,7 +117,7 @@ hist(df_sub$reviews_per_month)
 
 ### 3. Exploratory Visualizations
 ```{r}
-# most expensive neihgborhoods
+# most expensive neighborhoods
 df %>% 
   group_by(neighbourhood_cleansed) %>% 
   summarise(count = n(),
@@ -133,20 +128,6 @@ df %>%
   geom_bar(stat = 'identity') +
   labs(title = 'Top 10 Most Expensive NYC Neighborhoods',
        x = 'Neighborhood')
-
-
-# price in most popular neighborhoods
-df %>% 
-  group_by(neighbourhood_cleansed) %>% 
-  summarise(count = n(),
-            avg_price = mean(price)) %>% 
-  top_n(5, count) %>% 
-  arrange(desc(avg_price)) %>% 
-  ggplot(aes(x = neighbourhood_cleansed, y = avg_price)) +
-  geom_bar(stat = 'identity') +
-  labs(title = 'Price in Top 5 Neighborhoods with Most Listings',
-       x = 'Neighborhood',
-       y = 'Average Listing Price in $')
 
 # price in most popular neighborhoods
 df %>% 
@@ -161,7 +142,6 @@ df %>%
        x = 'Neighborhood',
        y = 'Average Listing Price in $')
 ```
-
 
 ### 4. Merging data with streeteasy by neighborhood
 ```{r}
@@ -200,6 +180,7 @@ n_distinct(listings$neighbourhood_cleansed)
 223 - 177
 # 46 difference
 
+# airbnb grouped by neighborhood
 airbnb_neighb <- df %>% 
   group_by(neighbourhood_cleansed) %>% 
   summarise(count = n(),
@@ -211,53 +192,30 @@ airbnb_neighb <- df %>%
             as.data.frame()
 head(airbnb_neighb)
 dim(airbnb_neighb) # 223 neighborhoods
-          
-join_test <- full_join(airbnb_neighb, rentals_neighb, 
-                       by = c('neighbourhood_cleansed' = 'neighborhood'), keep = TRUE)
-head(join_test)
-dim(join_test)
 
-listings_unmatched <- join_test %>% 
-  filter(is.na(join_test$neighborhood))
-dim(listings_unmatched) ## 88 unmatched, out of 223 (39%)
-listings_unmatched$neighbourhood_cleansed
-
-streeteasy_unmatched <- join_test %>% 
-  filter(is.na(join_test$neighbourhood_cleansed))
-dim(streeteasy_unmatched) # 42 unmatched, out of 177 (24%)
-streeteasy_unmatched$neighborhood
-
-join_test %>% 
-  top_n(20, count) %>% 
-  arrange(desc(count)) 
-# of top 20 neighborhoods with Airbnb listings, 
-# missing street easy match for Harlem and Hell's Kitchen
-
-rentals_neighb %>% filter(grepl('Harlem', neighborhood)) # central, east, west harlem
-airbnb_neighb %>% filter(grepl('Harlem', neighbourhood_cleansed)) # east harlem, harlem
-
-rentals_neighb %>% filter(grepl('Midtown', neighborhood)) #midtown, east, south, west
-airbnb_neighb %>% filter(grepl('Midtown', neighbourhood_cleansed)) # midtown
-airbnb_neighb %>% filter(grepl('Hell', neighbourhood_cleansed)) # hell's kitchen
-
+# rentals by neighborhood
 rentals_neighb_clean <- rentals_neighb %>% 
   mutate(neighborhood = gsub(pattern = 'Central Harlem', replacement = 'Harlem', 
                        x = neighborhood, ignore.case = F, fixed = T)) %>% 
   mutate(neighborhood = gsub(pattern = 'Midtown West', replacement = 'Hell\'s Kitchen', 
                        x = neighborhood, ignore.case = F, fixed = T))
 
-join_test_2 <- full_join(airbnb_neighb, rentals_neighb_clean, 
+# join by neighborhood
+join <- full_join(airbnb_neighb, rentals_neighb_clean, 
                        by = c('neighbourhood_cleansed' = 'neighborhood'), keep = TRUE)
+head(join)
+dim(join)
 
-top_20 <- join_test_2 %>% 
-  top_n(20, count) %>% 
-  select(neighbourhood_cleansed)
-top_20 <- unlist(top_20)
-top_20
+listings_unmatched <- join %>% 
+  filter(is.na(join$neighborhood))
+dim(listings_unmatched) ## 86 unmatched, out of 223
+listings_unmatched$neighbourhood_cleansed
 
-join_test_3 <- join_test_2 %>% 
-  filter(neighbourhood_cleansed %in% top_20)
-join_test_3
+streeteasy_unmatched <- join %>% 
+  filter(is.na(join$neighbourhood_cleansed))
+dim(streeteasy_unmatched) # 40 unmatched, out of 177
+streeteasy_unmatched$neighborhood
+
 
 ```
 
@@ -266,34 +224,34 @@ join_test_3
 ```{r}
 # median rent vs. avg airbnb price
 # appears to be positive correlation
-join_test_2 %>% 
+join %>% 
   ggplot(aes(x = median_rent, y = avg_price)) +
   geom_point() +
   coord_cartesian(xlim = c(1500, 6000), ylim = c(0, 500))
 
 # median rent vs. airbnb count
 # no clear correlation
-join_test_2 %>% 
+join %>% 
   ggplot(aes(x = median_rent, y = count)) +
   geom_point() +
   coord_cartesian(xlim = c(1500, 6000), ylim = c(0, 500))
 
 # rental inventory vs. avg airbnb price
 # no correlation
-join_test_2 %>% 
+join %>% 
   ggplot(aes(x = rental_inventory, y = avg_price)) +
   geom_point() +
   coord_cartesian(xlim = c(0, 1500), ylim = c(0, 1000))
 
 # rental inventory vs. airbnb count
 # looks like positive correlation
-join_test_2 %>% 
+join %>% 
   ggplot(aes(x = rental_inventory, y = count)) +
   geom_point() + 
   coord_cartesian(xlim = c(0, 1500), ylim = c(0, 2000))
 
 # avg airbnb price as percentage of median rent, top 10 neighbs
-join_test_2 %>% 
+join %>% 
   mutate(ratio = avg_price/median_rent) %>% 
   top_n(10, count) %>% 
   arrange(desc(count)) %>% 
@@ -303,7 +261,7 @@ join_test_2 %>%
 # midtown has most expensive airbnb prices compared to rental prices
 
 # avg airbnb price as percentage of median rent
-join_test_2 %>% 
+join %>% 
   mutate(ratio = avg_price/median_rent) %>% 
   top_n(10, ratio) %>% 
   ggplot(aes(x = reorder(neighbourhood_cleansed, -ratio), y = ratio)) +
@@ -312,43 +270,42 @@ join_test_2 %>%
 
 # rental inventory vs. airbnb review count
 # looks like positive correlation
-join_test_2 %>% 
+join %>% 
   ggplot(aes(x = rental_inventory, y = avg_reviews)) +
   geom_point() + 
   coord_cartesian(xlim = c(0, 1500), ylim = c(0, 100))
 
-summary(join_test_2$avg_reviews) # Q1-Q3: 19-34
+summary(join$avg_reviews) # Q1-Q3: 19-34
 ```
-
 
 ### 5a. Rentals and Airbnbs Top20 Neighborhoods
 ```{r}
 # median rent vs. avg airbnb price
 # appears to be positive correlation
-join_test_3 %>% 
+join %>% 
   ggplot(aes(x = median_rent, y = avg_price)) +
   geom_point()
 
 # median rent vs. airbnb count
 # no clear correlation
-join_test_3 %>% 
+join %>% 
   ggplot(aes(x = median_rent, y = count)) +
   geom_point()
 
 # rental inventory vs. avg airbnb price
 # no correlation
-join_test_3 %>% 
+join %>% 
   ggplot(aes(x = rental_inventory, y = avg_price)) +
   geom_point()
 
 # rental inventory vs. airbnb count
 # looks like positive correlation
-join_test_3 %>% 
+join %>% 
   ggplot(aes(x = rental_inventory, y = count)) +
   geom_point()
 
 # avg airbnb price as percentage of median rent, top 10 neighbs
-join_test_3 %>% 
+join %>% 
   mutate(ratio = avg_price/median_rent) %>% 
   top_n(20, count) %>% 
   arrange(desc(count)) %>% 
@@ -357,20 +314,13 @@ join_test_3 %>%
 # of top 20 neighbs,
 # East Harlem has most expensive airbnb prices compared to rental prices
 
-# count
-# avg_price
-# avg_reviews 
-# avg_rating
-# avg_location
-# avg_host_listings
-
 # rental inventory vs. airbnb review count
-join_test_2 %>% 
+join %>% 
   ggplot(aes(x = count, y = rental_inventory)) +
   geom_point() +
   geom_smooth()
 
-join_test_2 %>% 
+join %>% 
   ggplot(aes(x = count, y = median_rent)) +
   geom_point() +
   geom_smooth()
@@ -378,7 +328,7 @@ join_test_2 %>%
 
 
 
-### 6. Correlations and Modeling
+### 6. Correlations and Visualizing Relationships
 ```{r}
 df_sub <- df %>% 
   filter(reviews_per_month <= quantile(reviews_per_month, .99, na.rm = TRUE),
@@ -399,12 +349,8 @@ df_sub_cor <- df_sub %>%
 cor(df_sub_cor, use = "pairwise.complete.obs")
 
 ```
-```{r}
-options(scipen = 99)
-mod1 <- lm(reviews_per_month ~ bedrooms + availability_365 + review_scores_rating + 
-             calculated_host_listings_count + minimum_nights + price, data = df_sub)
-summary(mod1)
 
+```{r}
 plot(reviews_per_month ~ availability_365, data = df_sub)
 abline(loess(reviews_per_month ~ availability_365, data = df_sub), col = 'red')
 
@@ -440,8 +386,5 @@ geom_smooth(method = "loess", se = FALSE)
 ggplot(df_sub, aes(x = price, y=reviews_per_month)) +
 geom_smooth(method = "loess", se = FALSE)
 
-
 ```
-
-
 
