@@ -11,11 +11,9 @@ listings <- read.csv("data/listings.csv")
 rent <- read.csv("data/streeteasy/median_rent.csv")
 inventory <- read.csv("data/streeteasy/rental_inventory.csv")
 
-# convert price to numeric
-listings$price<- as.numeric(gsub('[^[:alnum:] ]', '', listings$price))/100
-
-# filter airbnb listings for plotting
-df_sub <- listings %>% 
+# clean airbnb listings for plotting
+df <- listings %>% 
+  mutate(price = as.numeric(gsub('[^[:alnum:] ]', '', listings$price))/100) %>% 
   filter(!is.na(bedrooms),
          reviews_per_month <= quantile(reviews_per_month, .99, na.rm = TRUE),
          price <= quantile(price, .99, na.rm = TRUE),
@@ -36,7 +34,7 @@ rentals <- full_join(rent, inventory, by = c('areaName', 'Borough', 'areaType'))
   filter(area_type == 'neighborhood')
 
 # group airbnb data by neighborhood
-airbnb_neighb <- listings %>% 
+airbnb_neighb <- df %>% 
   group_by(neighbourhood_cleansed) %>% 
   summarise(count = n(),
             avg_price = mean(price, na.rm = TRUE),
@@ -46,7 +44,7 @@ airbnb_neighb <- listings %>%
   as.data.frame()
 
 # join rentals and airbnb data
-df_join <- full_join(airbnb_neighb, rentals, 
-                     by = c('neighbourhood_cleansed' = 'neighborhood'), keep = TRUE)
-df_join %>% mutate(avg_revenue = avg_price * 30)
+df_join <- full_join(
+  airbnb_neighb, rentals, by = c('neighbourhood_cleansed' = 'neighborhood'), keep = TRUE) %>% 
+  mutate(avg_revenue = avg_price * 30)
 

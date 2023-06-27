@@ -2,19 +2,19 @@
 function(input, output, session) {
   
   listings_b <- reactive({
-    if(input$borough == "All") return(df_sub)
-    else return (df_sub %>% filter(neighbourhood_group_cleansed == input$borough))
+    if(input$borough == "All") return(df)
+    else return (df %>% filter(neighbourhood_group_cleansed == input$borough))
   }) 
   
   listings_price <- reactive({
-    if(input$borough_price == "All") return(df_sub)
-    else return (df_sub %>% filter(neighbourhood_group_cleansed == input$borough_price))
+    if(input$borough_price == "All") return(df)
+    else return (df %>% filter(neighbourhood_group_cleansed == input$borough_price))
   }) 
 
   listings_size <- reactive({
-    if(input$neighborhood == 'All' & input$borough == 'All') return(df_sub)
-    if (input$neighborhood == 'All') return(df_sub %>% filter(neighbourhood_group_cleansed == input$borough))
-    else return(df_sub %>% filter(neighbourhood_cleansed == input$neighborhood))
+    if(input$neighborhood == 'All' & input$borough == 'All') return(df)
+    if (input$neighborhood == 'All') return(df %>% filter(neighbourhood_group_cleansed == input$borough))
+    else return(df %>% filter(neighbourhood_cleansed == input$neighborhood))
   })
   
   observe({ 
@@ -25,11 +25,11 @@ function(input, output, session) {
   
   output$price_borough <- renderPlot(
     
-    df_sub %>%
+    df %>%
       group_by(neighbourhood_group_cleansed) %>%
       summarise(count = n()) %>%
       top_n(10, count) %>% 
-      inner_join(df_sub, by = 'neighbourhood_group_cleansed') %>% 
+      inner_join(df, by = 'neighbourhood_group_cleansed') %>% 
       mutate(neighbourhood_group_cleansed = fct_reorder(neighbourhood_group_cleansed, count)) %>% 
       ggplot(aes(fill = neighbourhood_group_cleansed, x = reorder(neighbourhood_group_cleansed, -count), y = price)) +
       geom_boxplot() + 
@@ -50,7 +50,7 @@ function(input, output, session) {
       summarise(count = n()) %>%
       arrange(desc(count)) %>% 
       slice(1:10) %>% 
-      inner_join(df_sub, by = 'neighbourhood_cleansed') %>% 
+      inner_join(df, by = 'neighbourhood_cleansed') %>% 
       mutate(neighbourhood_cleansed = fct_reorder(neighbourhood_cleansed, count)) %>% 
       ggplot(aes(fill = neighbourhood_cleansed, x = reorder(neighbourhood_cleansed, -count), y = price)) +
       geom_boxplot() + 
@@ -85,7 +85,7 @@ function(input, output, session) {
   
   output$donut_borough <- renderPlot(
     
-    df_sub %>%
+    df %>%
       group_by(neighbourhood_group_cleansed) %>% 
       summarise(count = n()) %>% 
       arrange(desc(count)) %>% 
@@ -151,7 +151,7 @@ function(input, output, session) {
 
   output$price_reviews_borough <- renderPlot(
   
-    df_sub %>% 
+    df %>% 
       ggplot(aes(x = price, y=reviews_per_month, col = neighbourhood_group_cleansed)) +
       geom_smooth(method = "loess", se = FALSE) +
       scale_color_brewer("Boroughs", palette='Set2') +
@@ -168,7 +168,7 @@ function(input, output, session) {
       group_by(neighbourhood_cleansed) %>% 
       summarise(count = n()) %>% 
       top_n(5, count) %>% 
-      right_join(df_sub, by = 'neighbourhood_cleansed') %>% 
+      right_join(df, by = 'neighbourhood_cleansed') %>% 
       filter(!is.na(count)) %>% 
       ggplot(aes(x = price, y=reviews_per_month, col = neighbourhood_cleansed)) +
       geom_smooth(method = "loess", se = FALSE) +
